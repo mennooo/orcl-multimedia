@@ -18,7 +18,7 @@ create or replace package body video_pkg as
   begin
   
     l_blob := apex_web_service.make_rest_request_b(
-        p_url => 'http://us.music.yahooapis.com/ video/v1/list/published/popular'
+      p_url => 'http://us.music.yahooapis.com/ video/v1/list/published/popular'
     , p_http_method => 'POST'
     , p_parm_name => apex_util.string_to_table('appid:format')
     , p_parm_value => apex_util.string_to_table('xyz:xml')
