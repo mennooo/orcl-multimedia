@@ -8,9 +8,16 @@ create or replace package file_pkg as
   , p_file_name in varchar2
   , p_dir_name in varchar2
   );
+  
+  ------------------------------------------------------------------------------
+  -- function bfile_to_blob
+  ------------------------------------------------------------------------------
+  function bfile_to_blob (
+    p_bfile in bfile
+  ) return blob;
 
   ------------------------------------------------------------------------------
-  -- procedure blob_to_file
+  -- procedure get_file_info
   ------------------------------------------------------------------------------
   function get_file_info (
     p_bfile in bfile

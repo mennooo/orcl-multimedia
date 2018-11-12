@@ -1,0 +1,1 @@
+create or replace directory audio_dir as 'C:\multimedia\audio';

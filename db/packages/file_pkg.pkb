@@ -39,9 +39,36 @@ create or replace package body file_pkg as
       end if;
       raise;
   end blob_to_file;
+  
+  ------------------------------------------------------------------------------
+  -- function bfile_to_blob
+  ------------------------------------------------------------------------------
+  function bfile_to_blob (
+    p_bfile in bfile
+  ) return blob
+  is
+  
+    l_blob blob default empty_blob();
+    l_bfile bfile default null;
+    
+    dest_offset integer:=1; 
+    src_offset integer:=1; 
+    
+  begin 
+  
+    l_bfile := p_bfile;
+  
+    dbms_lob.open(l_bfile, dbms_lob.file_readonly); 
+    dbms_lob.createtemporary(l_blob, true); 
+    dbms_lob.loadblobfromfile(l_blob,l_bfile,dbms_lob.lobmaxsize,dest_offset,src_offset);
+    DBMS_LOB.CLOSE(l_bfile); 
+    
+    return l_blob;
+  
+  end bfile_to_blob;
 
   ------------------------------------------------------------------------------
-  -- procedure blob_to_file
+  -- procedure get_file_info
   ------------------------------------------------------------------------------
   function get_file_info (
     p_bfile in bfile

@@ -1,3 +1,22 @@
+# Getting multimedia
+
+## Images
+You can find high quality free images on:
+https://www.pexels.com/
+https://unsplash.com/
+
+## Youtube videos
+There is a commandline tool that lets you download content from YouTube.
+
+## Audio
+
+
+https://rg3.github.io/youtube-dl/
+
+```bash
+youtube-dl https://www.youtube.com/watch?v=2m5nW9CQLJ0
+```
+
 ## Video
 Based on ffmeg.
 Supports most formats
