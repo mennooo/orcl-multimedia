@@ -28,7 +28,13 @@ create or replace package image_pkg as
     
     select image_pkg.convert_image(
               p_blob => file_pkg.bfile_to_blob(file_locator)
-            , p_rotate => 45) 
+            , p_sepia => 'Y'
+            , p_size => media_size_t(500, 300)
+            , p_rotate => 45
+            , p_type => 'grayscale'
+            , p_flip => 'Y'
+            , p_negative => 'Y'
+            )
       from multimedia
      where id = 27;
   */
@@ -38,11 +44,16 @@ create or replace package image_pkg as
   ------------------------------------------------------------------------------
   function convert_image (
     p_blob blob
-  , p_size multimedia_pkg.media_size_t default null
+  , p_file_name varchar2
+  , p_mime_type varchar2
+  , p_size media_size_t default null
+  , p_flip varchar default null
+  , p_flop varchar default null
   , p_rotate number default null
   , p_contrast number default null
-  , p_sepia boolean default null
-  , p_negative boolean default null
+  , p_type varchar2 default null
+  , p_sepia varchar2 default null
+  , p_negative varchar2 default null
   , p_ext varchar2 default null
   ) return blob;
 

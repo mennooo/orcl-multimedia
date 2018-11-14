@@ -9,11 +9,6 @@ create or replace package multimedia_pkg as
   gc_convert_base_url varchar2(50) := 'http://localhost:3000/';
   
   type query_param_tt is table of varchar2(4000) index by pls_integer;
-  
-  type media_size_t is record (
-    width number
-  , height number
-  );
 
   ------------------------------------------------------------------------------
   -- procedure ins
@@ -39,10 +34,22 @@ create or replace package multimedia_pkg as
   );
 
   ------------------------------------------------------------------------------
+  -- procedure ins_blob
+  ------------------------------------------------------------------------------
+  procedure ins_blob (
+    p_blob in out nocopy blob
+  , p_file_name varchar2
+  , p_mime_type varchar2
+  , p_type multimedia.media_type%type
+  );
+
+  ------------------------------------------------------------------------------
   -- function convert_media
   ------------------------------------------------------------------------------
   function convert_media (
     p_blob blob
+  , p_file_name varchar2
+  , p_mime_type varchar2
   , p_type multimedia.media_type%type
   , p_query_params varchar2
   ) return blob;

@@ -27,14 +27,17 @@ create or replace package body multimedia_pkg as
     l_blob blob;
     l_file_name apex_application_temp_files.filename%type;
     l_file_name_unique apex_application_temp_files.filename%type;
+    l_mime_type apex_application_temp_files.mime_type%type;
     l_media_dir media_dir_t;
     l_id multimedia.id%type;
   begin
   
     select blob_content
          , filename
+         , mime_type
       into l_blob
          , l_file_name
+         , l_mime_type
       from apex_application_temp_files
      where name = p_temp_file_name;
      
@@ -51,8 +54,8 @@ create or replace package body multimedia_pkg as
     , p_dir_name => l_media_dir
     );
     
-    insert into multimedia (id, media_type, file_name, file_locator)
-    values (l_id, p_type, l_file_name, bfilename(l_media_dir, l_file_name_unique));
+    insert into multimedia (id, media_type, file_name, mime_type, file_locator)
+    values (l_id, p_type, l_file_name, l_mime_type, bfilename(l_media_dir, l_file_name_unique));
     
   end ins;
 
@@ -66,6 +69,7 @@ create or replace package body multimedia_pkg as
     l_blob blob;
     l_file_name apex_application_temp_files.filename%type;
     l_file_name_unique apex_application_temp_files.filename%type;
+    l_mime_type apex_application_temp_files.mime_type%type;
     l_media_dir media_dir_t;
     l_id multimedia.id%type;
     
@@ -73,6 +77,7 @@ create or replace package body multimedia_pkg as
       b_collection_name varchar2
     ) is
       select c001 filename
+           , c002 mime_type
            , blob001 blob_content
         from apex_collections
        where collection_name = p_collection_name;
@@ -94,8 +99,8 @@ create or replace package body multimedia_pkg as
       , p_dir_name => l_media_dir
       );
       
-      insert into multimedia (id, media_type, file_name, file_locator)
-      values (l_id, p_type, rec.filename, bfilename(l_media_dir, l_file_name_unique));
+      insert into multimedia (id, media_type, file_name, mime_type, file_locator)
+      values (l_id, p_type, rec.filename, rec.mime_type, bfilename(l_media_dir, l_file_name_unique));
     
     end loop;
     
@@ -110,12 +115,14 @@ create or replace package body multimedia_pkg as
     l_blob blob;
     l_file_name apex_application_temp_files.filename%type;
     l_file_name_unique apex_application_temp_files.filename%type;
+    l_mime_type apex_application_temp_files.mime_type%type;
     l_media_dir media_dir_t;
     l_id multimedia.id%type;
   begin
   
     l_blob := apex_web_service.clobbase642blob(apex_application.g_clob_01);
-    l_file_name := 'dog.jpg';
+    l_file_name := apex_application.g_x01;
+    l_mime_type := apex_application.g_x02;
      
     l_media_dir := get_media_dir(p_type);
     
@@ -130,16 +137,50 @@ create or replace package body multimedia_pkg as
     , p_dir_name => l_media_dir
     );
     
-    insert into multimedia (id, media_type, file_name, file_locator)
-    values (l_id, p_type, l_file_name, bfilename(l_media_dir, l_file_name_unique));
+    insert into multimedia (id, media_type, file_name, mime_type, file_locator)
+    values (l_id, p_type, l_file_name, l_mime_type, bfilename(l_media_dir, l_file_name_unique));
     
   end ins_ajax_base64;
+
+  ------------------------------------------------------------------------------
+  -- procedure ins_blob
+  ------------------------------------------------------------------------------
+  procedure ins_blob (
+    p_blob in out nocopy blob
+  , p_file_name varchar2
+  , p_mime_type varchar2
+  , p_type multimedia.media_type%type
+  ) is
+    l_file_name_unique apex_application_temp_files.filename%type;
+    l_media_dir media_dir_t;
+    l_id multimedia.id%type;
+  begin
+     
+    l_media_dir := get_media_dir(p_type);
+    
+    l_id := mtmd_id_seq.nextval();
+    
+    -- make name unique
+    l_file_name_unique := substr(l_id || '_' || p_file_name, 1, 255);
+     
+    file_pkg.blob_to_file(
+      p_blob => p_blob
+    , p_file_name => l_file_name_unique
+    , p_dir_name => l_media_dir
+    );
+    
+    insert into multimedia (id, media_type, file_name, mime_type, file_locator)
+    values (l_id, p_type, p_file_name, p_mime_type, bfilename(l_media_dir, l_file_name_unique));
+  
+  end ins_blob;
 
   ------------------------------------------------------------------------------
   -- function convert_media
   ------------------------------------------------------------------------------
   function convert_media (
     p_blob blob
+  , p_file_name varchar2
+  , p_mime_type varchar2
   , p_type multimedia.media_type%type
   , p_query_params varchar2
   ) return blob
@@ -159,7 +200,9 @@ create or replace package body multimedia_pkg as
     l_raw            RAW(32767);
   begin
   
-    utl_http_multipart.add_file(l_parts, lower(p_type), '123.jpg', 'image/jpg', p_blob);
+    utl_http_multipart.add_file(l_parts, lower(p_type), p_file_name, p_mime_type, p_blob);
+    
+    utl_http.set_transfer_timeout(300); --seconds
   
     l_http_request := utl_http.begin_request(
       url => gc_convert_base_url || lower(p_type) || p_query_params
