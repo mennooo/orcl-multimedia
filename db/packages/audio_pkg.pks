@@ -11,19 +11,20 @@ create or replace package audio_pkg as
     - ext [extension]
   */
 
---  ------------------------------------------------------------------------------
---  -- function convert_video
---  ------------------------------------------------------------------------------
---  function convert_video (
---    p_bfile bfile
---  , p_duration varchar2 default null
---  , p_volume number default null
---  , p_size multimedia_pkg.media_size_t default null
---  , p_framerate number default null
---  , p_bitrate number default null
---  , p_gray boolean default null
---  , p_thumbnail boolean default null
---  , p_ext varchar2 default null
---  ) return blob;
+  ------------------------------------------------------------------------------
+  -- function convert_audio
+  ------------------------------------------------------------------------------
+  function convert_audio (
+    p_blob blob
+  , p_file_name varchar2
+  , p_mime_type varchar2
+  , p_tempo number default null
+  , p_starttime varchar2 default null
+  , p_duration varchar2 default null
+  , p_volume number default null
+  , p_bitrate number default null
+  , p_samplerate number default null
+  , p_ext varchar2 default null
+  ) return blob;
 
 end audio_pkg;

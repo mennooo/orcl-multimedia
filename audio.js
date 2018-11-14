@@ -4,29 +4,23 @@ const mime = require('mime-types')
 const path = require('path')
 
 const gcConversions = {
-  duration: (settings) => {
-    return ['-t', ...settings]
-  },
-  starttime: (settings) => {
-    return ['-ss', ...settings]
-  },
-  volume: (settings) => {
-    return ['-filter:a', `volume=${settings}`]
-  },
-  size: (settings) => {
-    return ['-s', `${settings[0]}x${settings[1]}`]
-  },
-  framerate: (settings) => {
-    return ['-r', ...settings]
+  tempo: (settings) => {
+    return ['-filter:a', `atempo=${settings}`]
   },
   bitrate: (settings) => {
     return ['-ab', ...settings]
   },
-  gray: () => {
-    return ['-vf', 'format=gray']
+  samplerate: (settings) => {
+    return ['-filter:a', `asetrate=r=${settings}`]
   },
-  thumbnail: (settings) => {
-    return ['-vf', `thumbnail,scale=${settings[0]}:${settings[1]}`]
+  duration: (settings) => {
+    return ['-t', ...settings]
+  },
+  starttime: (settings) => {
+    return ['-s', `${settings[0]}x${settings[1]}`]
+  },
+  volume: (settings) => {
+    return ['-af', `volume=${settings}`]
   }
 }
 
@@ -52,7 +46,7 @@ async function convert (req, res) {
 
   let conversions = []
 
-  // Get all conversions for the video
+  // Get all conversions for the audio
   for (let conversion in req.query) {
     if (conversion !== 'ext') {
       try {

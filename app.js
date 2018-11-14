@@ -1,33 +1,43 @@
-var express = require("express");
-var multer = require("multer");
+var express = require('express')
+var multer = require('multer')
 var memoryStorage = multer.memoryStorage()
-var videoUpload = multer({ dest: "uploads/" });
-var audioUpload = multer({ dest: "uploads/" });
-var imageUpload = multer({ storage: memoryStorage });
-var video = require("./video");
-var image = require("./image");
 
-var app = express();
+var imageUpload = multer({ storage: memoryStorage })
+var fileUpload = multer({ dest: 'uploads/' })
 
-app.post("/image", imageUpload.single("image"), async function(req, res, next) {
+var image = require('./image')
+var audio = require('./audio')
+var video = require('./video')
+
+var app = express()
+
+app.post('/image', imageUpload.single('image'), async function (req, res, next) {
   try {
-    await image.convert(req, res);
+    await image.convert(req, res)
   } catch (error) {
     next(error)
   }
-});
+})
 
-app.post("/video", videoUpload.single("video"), async function(req, res, next) {
+app.post('/audio', fileUpload.single('audio'), async function (req, res, next) {
   try {
-    await video.convert(req, res);
+    await audio.convert(req, res)
   } catch (error) {
     next(error)
   }
-});
+})
 
-app.use(function(err, req, res, next) {
-  console.log(err);
-  res.status(500).send(err.message);
-});
+app.post('/video', fileUpload.single('video'), async function (req, res, next) {
+  try {
+    await video.convert(req, res)
+  } catch (error) {
+    next(error)
+  }
+})
 
-app.listen(3000);
+app.use(function (err, req, res, next) {
+  console.log(err)
+  res.status(500).send(err.message)
+})
+
+app.listen(3000)
