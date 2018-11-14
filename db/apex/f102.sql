@@ -27,7 +27,7 @@ prompt APPLICATION 102 - Multimedia administration
 -- Application Export:
 --   Application:     102
 --   Name:            Multimedia administration
---   Date and Time:   13:13 Wednesday November 14, 2018
+--   Date and Time:   15:30 Wednesday November 14, 2018
 --   Exported By:     ADMIN
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -37,11 +37,11 @@ prompt APPLICATION 102 - Multimedia administration
 
 -- Application Statistics:
 --   Pages:                     11
---     Items:                   16
+--     Items:                   18
 --     Processes:               14
 --     Regions:                 21
 --     Buttons:                 11
---     Dynamic Actions:          3
+--     Dynamic Actions:          4
 --   Shared Components:
 --     Logic:
 --     Navigation:
@@ -113,7 +113,7 @@ wwv_flow_api.create_flow(
 ,p_substitution_string_01=>'APP_NAME'
 ,p_substitution_value_01=>'Multimedia administration'
 ,p_last_updated_by=>'ADMIN'
-,p_last_upd_yyyymmddhh24miss=>'20181114131138'
+,p_last_upd_yyyymmddhh24miss=>'20181114150854'
 ,p_file_prefix => nvl(wwv_flow_application_install.get_static_app_file_prefix,'')
 ,p_files_version=>8
 ,p_ui_type_name => null
@@ -21664,9 +21664,17 @@ wwv_flow_api.create_page(
 ,p_step_sub_title_type=>'TEXT_WITH_SUBSTITUTIONS'
 ,p_autocomplete_on_off=>'OFF'
 ,p_javascript_file_urls=>'#APP_IMAGES#watermark.min.js'
+,p_javascript_code=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'function splitSlice(str, len) {',
+'  var ret = [ ];',
+'  for (var offset = 0, strLen = str.length; offset < strLen; offset += len) {',
+'    ret.push(str.slice(offset, len + offset));',
+'  }',
+'  return ret;',
+'}'))
 ,p_page_template_options=>'#DEFAULT#'
 ,p_last_updated_by=>'ADMIN'
-,p_last_upd_yyyymmddhh24miss=>'20181113155543'
+,p_last_upd_yyyymmddhh24miss=>'20181114150724'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(7886909889788108)
@@ -21688,7 +21696,7 @@ wwv_flow_api.create_page_plug(
 ,p_plug_template=>wwv_flow_api.id(1766827232967598)
 ,p_plug_display_sequence=>10
 ,p_plug_display_point=>'BODY'
-,p_plug_source=>'<div id="composite-image"></div>'
+,p_plug_source=>'<canvas id="canvas"></canvas>'
 ,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
 ,p_attribute_01=>'N'
 ,p_attribute_02=>'HTML'
@@ -21710,12 +21718,21 @@ wwv_flow_api.create_page_button(
 ,p_button_sequence=>10
 ,p_button_plug_id=>wwv_flow_api.id(7886909889788108)
 ,p_button_name=>'Upload'
-,p_button_action=>'SUBMIT'
+,p_button_action=>'DEFINED_BY_DA'
 ,p_button_template_options=>'#DEFAULT#:t-Button--large'
 ,p_button_template_id=>wwv_flow_api.id(1840613961967646)
 ,p_button_is_hot=>'Y'
 ,p_button_image_alt=>'Upload'
 ,p_button_position=>'REGION_TEMPLATE_EDIT'
+,p_warn_on_unsaved_changes=>null
+);
+wwv_flow_api.create_page_branch(
+ p_id=>wwv_flow_api.id(7963992100397962)
+,p_branch_name=>'Branch to home'
+,p_branch_action=>'f?p=&APP_ID.:1:&SESSION.::&DEBUG.:RP::&success_msg=#SUCCESS_MSG#'
+,p_branch_point=>'AFTER_PROCESSING'
+,p_branch_type=>'REDIRECT_URL'
+,p_branch_sequence=>20
 );
 wwv_flow_api.create_page_item(
  p_id=>wwv_flow_api.id(7887198256788110)
@@ -21730,6 +21747,22 @@ wwv_flow_api.create_page_item(
 ,p_attribute_01=>'APEX_APPLICATION_TEMP_FILES'
 ,p_attribute_09=>'SESSION'
 ,p_attribute_10=>'N'
+);
+wwv_flow_api.create_page_item(
+ p_id=>wwv_flow_api.id(7891067894788149)
+,p_name=>'P5_FILE_NAME'
+,p_item_sequence=>20
+,p_item_plug_id=>wwv_flow_api.id(7886909889788108)
+,p_display_as=>'NATIVE_HIDDEN'
+,p_attribute_01=>'N'
+);
+wwv_flow_api.create_page_item(
+ p_id=>wwv_flow_api.id(7891126109788150)
+,p_name=>'P5_MIME_TYPE'
+,p_item_sequence=>30
+,p_item_plug_id=>wwv_flow_api.id(7886909889788108)
+,p_display_as=>'NATIVE_HIDDEN'
+,p_attribute_01=>'N'
 );
 wwv_flow_api.create_page_da_event(
  p_id=>wwv_flow_api.id(7887211024788111)
@@ -21750,9 +21783,17 @@ wwv_flow_api.create_page_da_action(
 ,p_attribute_01=>wwv_flow_string.join(wwv_flow_t_varchar2(
 '// load a url and a file object',
 'var upload = document.querySelector(''input[type=file]'').files[0];',
+'var canvas = document.getElementById(''canvas'');',
+'var ctx = canvas.getContext(''2d'');',
+'',
+'apex.item(''P5_FILE_NAME'').setValue(upload.name)',
+'apex.item(''P5_MIME_TYPE'').setValue(upload.type)',
 '',
 'watermark([upload, ''#APP_IMAGES#oracle.svg''])',
 '  .image(function (img, logo) {',
+'    img.onload = function(){',
+'      console.log(1)',
+'    }',
 '    var context = img.getContext(''2d'');',
 '    context.save();',
 '',
@@ -21762,16 +21803,49 @@ wwv_flow_api.create_page_da_action(
 '    return img;',
 '  })',
 '  .then(function (img) {',
-'    var promise = apex.server.process(''upload'', {',
+'    canvas.width = img.width',
+'    canvas.height = img.height',
+'    ctx.drawImage(img, 0, 0);',
+'    /*var promise = apex.server.process(''upload'', {',
 '      x01: upload.name,',
 '      x02: upload.type,',
 '      p_clob_01: img.src.replace(/^data:image\/(png|jpg);base64,/, '''')',
 '    })',
 '    promise.fail(function (err) {',
 '        console.log(err)',
-'    })',
-'    document.getElementById(''composite-image'').appendChild(img);',
+'    })*/',
+'    //document.getElementById(''composite-image'').appendChild(img);',
 '  });'))
+);
+wwv_flow_api.create_page_da_event(
+ p_id=>wwv_flow_api.id(7963170545396392)
+,p_name=>'On upload'
+,p_event_sequence=>20
+,p_triggering_element_type=>'BUTTON'
+,p_triggering_button_id=>wwv_flow_api.id(7887487079788113)
+,p_bind_type=>'bind'
+,p_bind_event_type=>'click'
+);
+wwv_flow_api.create_page_da_action(
+ p_id=>wwv_flow_api.id(7963510949396398)
+,p_event_id=>wwv_flow_api.id(7963170545396392)
+,p_event_result=>'TRUE'
+,p_action_sequence=>10
+,p_execute_on_page_init=>'N'
+,p_action=>'NATIVE_JAVASCRIPT_CODE'
+,p_attribute_01=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'var canvas1 = document.getElementById(''canvas'')',
+'canvas1.toBlob(function (blob) {',
+'  var oReq = new XMLHttpRequest();',
+'  var query = ''name='' + apex.item(''P5_FILE_NAME'').getValue() + ''&mimetype='' +apex.item(''P5_MIME_TYPE'').getValue() + ''&mediatype=IMAGE'';',
+'  oReq.open("POST", ''/ords/demo/multimedia/upload?'' + query, true);',
+'  oReq.onload = function (oEvent) {',
+'    apex.submit()',
+'  };',
+'',
+'  oReq.send(blob);',
+'}); ',
+''))
 );
 wwv_flow_api.create_page_process(
  p_id=>wwv_flow_api.id(7887554034788114)
@@ -21810,7 +21884,7 @@ wwv_flow_api.create_page(
 ,p_css_file_urls=>'#APP_IMAGES#cropper.css'
 ,p_page_template_options=>'#DEFAULT#'
 ,p_last_updated_by=>'ADMIN'
-,p_last_upd_yyyymmddhh24miss=>'20181114131138'
+,p_last_upd_yyyymmddhh24miss=>'20181114150854'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(7887721367788116)
@@ -21970,21 +22044,14 @@ wwv_flow_api.create_page_da_action(
 ,p_attribute_01=>wwv_flow_string.join(wwv_flow_t_varchar2(
 'var canvas1 = $(''#canvas'').data(''cropper'').getCroppedCanvas()',
 'canvas1.toBlob(function (blob) {',
-'  var reader = new FileReader();',
-'  reader.readAsDataURL(blob); ',
-'  reader.onloadend = function() {',
-'    var promise = apex.server.process(''upload'', {',
-'      x01: apex.item(''P6_FILE_NAME'').getValue(),',
-'      x02: apex.item(''P6_MIME_TYPE'').getValue(),',
-'      p_clob_01: reader.result.replace(/^data:image\/(png|jpg);base64,/, '''')',
-'    })',
-'    promise.then(function () {',
-'      apex.submit()',
-'    })',
-'    promise.fail(function (err) {',
-'        console.log(err)',
-'    })',
-'  }',
+'  var oReq = new XMLHttpRequest();',
+'  var query = ''name='' + apex.item(''P6_FILE_NAME'').getValue() + ''&mimetype='' +apex.item(''P6_MIME_TYPE'').getValue() + ''&mediatype=IMAGE'';',
+'  oReq.open("POST", ''/ords/demo/multimedia/upload?'' + query, true);',
+'  oReq.onload = function (oEvent) {',
+'    apex.submit()',
+'  };',
+'',
+'  oReq.send(blob);',
 '}); ',
 ''))
 );
